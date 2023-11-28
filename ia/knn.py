@@ -1,10 +1,10 @@
 import random
 
 import pandas as pd
-from sklearn import set_config
 from sklearn.metrics import mean_squared_error, mean_absolute_error, mean_absolute_percentage_error
 from sklearn.model_selection import train_test_split
-from sklearn.tree import DecisionTreeRegressor
+from sklearn.neighbors import KNeighborsRegressor
+from sklearn.preprocessing import StandardScaler
 
 # Carregando os dados
 df = pd.read_csv('./datasets/diamonds.csv', sep=',')
@@ -52,28 +52,19 @@ outings = df['price'].values
 # Dividindo o conjunto de dados em treino e teste
 x_train, x_test, y_train, y_test = train_test_split(entries, outings, test_size=0.2, random_state=42)
 
-set_config(print_changed_only=False)
+scaler = StandardScaler()
+x_train_scaled = scaler.fit_transform(x_train)
+x_test_scaled = scaler.transform(x_test)
 
-dtr = DecisionTreeRegressor()
-print(dtr)
-
-# Criando modelo de árvore de decisão
-DecisionTreeRegressor(
-    ccp_alpha=0.0, criterion='mse', max_depth=20,
-    max_features=None, max_leaf_nodes=None,
-    min_impurity_decrease=0.0,
-    min_samples_leaf=1, min_samples_split=2,
-    min_weight_fraction_leaf=0.0,
-    random_state=None, splitter='best'
+# Criando o modelo k-NN para regressão e treinando-o
+knn_regressor = KNeighborsRegressor(
+    n_neighbors=5,
+    metric='manhattan',
+    weights='distance'
 )
+knn_regressor.fit(x_train_scaled, y_train)
 
-# Treinando modelo
-dtr.fit(x_train, y_train)
-
-score = dtr.score(x_train, y_train)
-print("R-squared:", score)
-
-y_pred = dtr.predict(x_test)
+y_pred = knn_regressor.predict(x_test_scaled)
 
 # Printando desempenho do modelo
 mse = mean_squared_error(y_test, y_pred)
@@ -85,25 +76,25 @@ print("RMSE: ", mse ** (1 / 2.0))
 print("MAPE: ", mape * 100, '%')
 print("Média de valores: ", y_test.mean())
 
-# Pegando exemplo de previsão
 printIndex = random.randint(0, y_test.size)
 
+# Pegando exemplo de previsão
 print(f'index: {printIndex}')
 print(
     f'Previsão: '
-    f'{dtr.predict(x_test)[printIndex]}'
-)  # 1056  1093
+    f'{knn_regressor.predict(x_test_scaled)[printIndex]}'
+)  
 
 print(f'Valor correto: {y_test[printIndex]}')
 
 # Resultados:
-# MSE:  533111.3800055617
-# MAE:  351.72080088987764
-# RMSE:  730.1447664713908
-# MAPE:  8.315084855388413 %
+# MSE:  414211.7366552523
+# MAE:  327.6626639822504
+# RMSE:  643.5928345275856
+# MAPE:  9.327774021442123 %
 # Média de valores:  3906.0357804968485
 
 # Exemplo de previsão
-# index: 8434
-# Previsão: 979.0
-# Valor correto: 1046
+# index: 9269
+# Previsão: 529.1977361385503
+# Valor correto: 432
